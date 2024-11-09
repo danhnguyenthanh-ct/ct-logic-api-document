@@ -3,15 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+
 	"github.com/carousell/ct-go/pkg/gateway"
 	"github.com/carousell/ct-go/pkg/logger"
-	pb "github.com/carousell/ct-grpc-go/pkg/ct-logic-standard"
-	"github.com/ct-logic-standard/config"
-	"github.com/ct-logic-standard/internal/controller"
-	"github.com/ct-logic-standard/internal/repository/ad_listing_client"
-	"github.com/ct-logic-standard/internal/repository/kafka"
-	"github.com/ct-logic-standard/internal/repository/rabbitmq"
-	"github.com/ct-logic-standard/internal/usecase"
+	"github.com/ct-logic-api-document/config"
+	"github.com/ct-logic-api-document/internal/handler"
+	"github.com/ct-logic-api-document/internal/usecase"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -31,20 +28,17 @@ var service = &cobra.Command{
 func Start(
 	lc fx.Lifecycle,
 	conf *config.Config,
-	controller *controller.Controller,
+	hdl *handler.Handler,
 ) *gateway.Server {
 	log := logger.MustNamed("server")
 	ctx := context.Background()
 
 	serverConfig := gateway.NewServerConfig().
 		SetLogger(logger.MustNamed("gateway")).
-		SetGRPCAddr(conf.App.GRPCAddr).
 		SetHTTPAddr(conf.App.HTTPAddr).
-		RegisterGRPC(func(s *grpc.Server) {
-			pb.RegisterLogicStandardServiceServer(s, controller)
-		}).
+		RegisterGRPC(func(s *grpc.Server) {}).
 		RegisterHTTP(func(mux *runtime.ServeMux, conn *grpc.ClientConn) {
-			pb.RegisterLogicStandardServiceHandler(ctx, mux, conn)
+			handler.RegisterCustomHTTPHandler(ctx, conf, mux, hdl)
 		})
 	server, err := gateway.NewServer(serverConfig)
 	if err != nil {
@@ -54,7 +48,6 @@ func Start(
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				log.Infof("grpc server starting at: %s", conf.App.GRPCAddr)
 				log.Infof("http server starting at: %s", conf.App.HTTPAddr)
 				err := server.Serve(ctx)
 				if err != nil {
@@ -82,11 +75,9 @@ func Invoke(invokers ...interface{}) *fx.App {
 		fx.StartTimeout(conf.App.StartTimeout),
 		fx.StopTimeout(conf.App.StopTimeout),
 		fx.Provide(
-			controller.NewController,
-			usecase.NewAdListingUC,
-			ad_listing_client.NewAdListingClient,
-			kafka.NewKafkaProducer,
-			rabbitmq.NewRabbitMQProducer,
+			usecase.NewInputUC,
+			handler.NewInputHandler,
+			handler.NewHandler,
 		),
 		fx.Supply(conf),
 		fx.Invoke(invokers...),

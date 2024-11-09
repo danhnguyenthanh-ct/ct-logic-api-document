@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/carousell/ct-go/pkg/logger"
-	"github.com/ct-logic-standard/cmd"
+	"github.com/ct-logic-api-document/cmd"
 )
 
 func main() {
