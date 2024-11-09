@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 func Execute() error {
@@ -13,8 +14,6 @@ func Execute() error {
 		Run:   func(_ *cobra.Command, args []string) {},
 	}
 	rootCmd.AddCommand(service)
-	rootCmd.AddCommand(workerKafka)
-	rootCmd.AddCommand(workerRabbitmq)
 
 	err := rootCmd.Execute()
 	if err != nil {
