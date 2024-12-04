@@ -11,15 +11,10 @@ import (
 )
 
 type Handler struct {
-	inputHandler *InputHandler
 }
 
-func NewHandler(
-	inputHandler *InputHandler,
-) *Handler {
-	return &Handler{
-		inputHandler: inputHandler,
-	}
+func NewHandler() *Handler {
+	return &Handler{}
 }
 
 func RegisterCustomHTTPHandler(
@@ -30,9 +25,7 @@ func RegisterCustomHTTPHandler(
 ) {
 	e := echo.New()
 
-	internalGroup := e.Group("/internal")
-
-	handler.inputHandler.RegisterInternalGroup(internalGroup)
+	// internalGroup := e.Group("/internal")
 
 	echo.WrapHandler(mux)
 

@@ -1,0 +1,25 @@
+services:
+  mongo:
+    container_name: mongo
+    image: mongo:8.0 # use your production version
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: bogus
+      MONGO_INITDB_ROOT_PASSWORD: bogus
+      MONGO_INITDB_DATABASE: mongodb
+    volumes:
+      - ./mongodb/init.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      # - ./dbdata:/data/db:rw
+    ports:
+      - 27017:27017
+
+  mongo-express:
+    container_name: mongo-express
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: bogus
+      ME_CONFIG_MONGODB_ADMINPASSWORD: bogus
+      ME_CONFIG_MONGODB_URL: mongodb://bogus:bogus@mongo:27017/
