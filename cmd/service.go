@@ -7,6 +7,7 @@ import (
 	"github.com/carousell/ct-go/pkg/gateway"
 	"github.com/carousell/ct-go/pkg/logger"
 	"github.com/ct-logic-api-document/config"
+	"github.com/ct-logic-api-document/internal/controller"
 	"github.com/ct-logic-api-document/internal/handler"
 	"github.com/ct-logic-api-document/internal/usecase"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -75,9 +76,9 @@ func Invoke(invokers ...interface{}) *fx.App {
 		fx.StartTimeout(conf.App.StartTimeout),
 		fx.StopTimeout(conf.App.StopTimeout),
 		fx.Provide(
-			usecase.NewInputUC,
-			handler.NewInputHandler,
 			handler.NewHandler,
+			usecase.NewFetchDataUC,
+			controller.NewCronJob,
 		),
 		fx.Supply(conf),
 		fx.Invoke(invokers...),

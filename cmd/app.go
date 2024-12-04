@@ -14,6 +14,7 @@ func Execute() error {
 		Run:   func(_ *cobra.Command, args []string) {},
 	}
 	rootCmd.AddCommand(service)
+	rootCmd.AddCommand(cronjobCmd)
 
 	err := rootCmd.Execute()
 	if err != nil {
