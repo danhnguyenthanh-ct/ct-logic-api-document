@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"time"
+
 	mongodbutils "github.com/ct-logic-api-document/utils/mongodb"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -18,4 +20,12 @@ type Parameter struct {
 	Value    string `json:"value" bson:"value"`
 	In       string `json:"in" bson:"in"`
 	Required bool   `json:"required" bson:"required"`
+}
+
+type GetSampleRequestByApiIdRequest struct {
+	ApiId  primitive.ObjectID `json:"api_id"`
+	Limit  int64              `json:"limit"`
+	Offset int64              `json:"offset"`
+	From   *time.Time         `json:"from"`
+	To     *time.Time         `json:"to"`
 }

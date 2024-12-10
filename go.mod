@@ -11,9 +11,10 @@ require (
 	github.com/carousell/ct-go/pkg/cronjob v0.1.0
 	github.com/carousell/ct-go/pkg/gateway v0.24.0
 	github.com/carousell/ct-go/pkg/logger v0.9.5
-	github.com/carousell/ct-go/pkg/pushgateway v0.1.0
 	github.com/carousell/ct-go/pkg/workerpool v0.2.1
+	github.com/goccy/go-json v0.10.3
 	github.com/google/go-cmp v0.6.0
+	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.23.0
 	github.com/labstack/echo/v4 v4.12.0
@@ -28,6 +29,7 @@ require (
 	go.mongodb.org/mongo-driver v1.17.1
 	go.uber.org/fx v1.23.0
 	golang.org/x/net v0.31.0
+	golang.org/x/text v0.20.0
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/grpc v1.68.0
 )
@@ -49,6 +51,7 @@ require (
 	github.com/carousell/ct-go/pkg/httpclient v0.10.0 // indirect
 	github.com/carousell/ct-go/pkg/httputils v0.3.0 // indirect
 	github.com/carousell/ct-go/pkg/json v0.1.2 // indirect
+	github.com/carousell/ct-go/pkg/pushgateway v0.1.0 // indirect
 	github.com/carousell/ct-grpc-go/pkg/ct-common-error v1.0.0 // indirect
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
@@ -64,12 +67,10 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
@@ -116,7 +117,6 @@ require (
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.9.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/api v0.203.0 // indirect

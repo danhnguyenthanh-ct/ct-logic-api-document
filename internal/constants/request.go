@@ -10,6 +10,7 @@ const (
 	ParameterTypeString  = "string"
 	ParameterTypeBoolean = "boolean"
 	ParameterTypeInteger = "integer"
+	ParameterTypeAny     = "any"
 )
 
 var (

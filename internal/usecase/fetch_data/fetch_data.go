@@ -1,11 +1,10 @@
-package usecase
+package fetchdata
 
 import (
 	"bufio"
 	"compress/gzip"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -115,7 +114,7 @@ func (f *fetchDataUC) FetchDataFromGcs(ctx context.Context) error {
 
 	// Wait for all tasks to finish and check errors
 	if err := pool.Wait(); err != nil {
-		logctx.Errorw(ctx, "err when process  folder", "err", err)
+		logctx.Errorw(ctx, "err when process folder", "err", err)
 	}
 
 	return nil
@@ -145,32 +144,34 @@ func (f *fetchDataUC) processFolder(ctx context.Context, bucket *storage.BucketH
 func (f *fetchDataUC) processFile(ctx context.Context, bucket *storage.BucketHandle, file string) error {
 	// process the file
 	logctx.Infof(ctx, "processing file %s", file)
-	logLineChan := make(chan []byte, maxLogLinesProccessing)
-	f.readFile(ctx, bucket, file, logLineChan)
 	pool := workerpool.NewE(maxLogLinesProccessing)
 	defer func() {
 		// close the jobs channel and the pool
-		close(logLineChan)
 		pool.Close()
 	}()
 	// wait for all tasks to finish and close the pool
-	for logLine := range logLineChan {
+	lines, err := f.readFile(ctx, bucket, file)
+	if err != nil {
+		logctx.Errorw(ctx, "failed to read file", "err", err)
+		return err
+	}
+	for _, line := range lines {
 		// process the job
-		logLine := logLine
+		line := line
 		pool.Run(func() error {
-			return f.ProcessLogLine(ctx, logLine)
+			return f.ProcessLogLine(ctx, line)
 		})
 	}
 
 	if err := pool.Wait(); err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
+		logctx.Errorw(ctx, "err when process log line", "err", err)
 		return err
 	}
 
 	return nil
 }
 
-func (f *fetchDataUC) readFile(ctx context.Context, bucket *storage.BucketHandle, file string, jobs chan<- []byte) error {
+func (f *fetchDataUC) readFile(ctx context.Context, bucket *storage.BucketHandle, file string) ([][]byte, error) {
 	// read the file
 	// send the data to the jobs channel
 	logctx.Infow(ctx, "reading file", "file", file)
@@ -183,7 +184,7 @@ func (f *fetchDataUC) readFile(ctx context.Context, bucket *storage.BucketHandle
 	}()
 	if err != nil {
 		logctx.Errorw(ctx, "failed to init object reader", err)
-		return err
+		return nil, err
 	}
 	decompressed, err := gzip.NewReader(rdr)
 	defer func() {
@@ -197,11 +198,12 @@ func (f *fetchDataUC) readFile(ctx context.Context, bucket *storage.BucketHandle
 	}()
 	if err != nil {
 		logctx.Errorw(ctx, "failed to init gzip reader", "err", err)
-		return err
+		return nil, err
 	}
 	scanner := bufio.NewScanner(decompressed)
 	buffer := bufferPool.Get().([]byte)
 	scanner.Buffer(buffer, 5*1024*1024) // 5MB max line length
+	resp := make([][]byte, 0)
 	defer bufferPool.Put(&buffer)
 	for scanner.Scan() {
 		lineBytes := scanner.Bytes()
@@ -210,10 +212,9 @@ func (f *fetchDataUC) readFile(ctx context.Context, bucket *storage.BucketHandle
 			logctx.Errorw(ctx, "failed to pre process line", "err", err)
 			continue
 		}
-		jobs <- line
-		return nil // run only one job
+		resp = append(resp, line)
 	}
-	return nil
+	return resp, nil
 }
 
 func (f *fetchDataUC) preProcessLine(_ context.Context, line []byte) ([]byte, error) {
