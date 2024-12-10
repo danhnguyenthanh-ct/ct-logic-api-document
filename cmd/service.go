@@ -9,7 +9,7 @@ import (
 	"github.com/ct-logic-api-document/config"
 	"github.com/ct-logic-api-document/internal/controller"
 	"github.com/ct-logic-api-document/internal/handler"
-	"github.com/ct-logic-api-document/internal/usecase"
+	fetchdata "github.com/ct-logic-api-document/internal/usecase/fetch_data"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -77,7 +77,7 @@ func Invoke(invokers ...interface{}) *fx.App {
 		fx.StopTimeout(conf.App.StopTimeout),
 		fx.Provide(
 			handler.NewHandler,
-			usecase.NewFetchDataUC,
+			fetchdata.NewFetchDataUC,
 			controller.NewCronJob,
 		),
 		fx.Supply(conf),

@@ -3,17 +3,17 @@ package mongodb
 import (
 	"context"
 
+	"github.com/carousell/ct-go/pkg/container"
 	"github.com/ct-logic-api-document/internal/constants"
 	"github.com/ct-logic-api-document/internal/entity"
 	mongodbutils "github.com/ct-logic-api-document/utils/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ISampleRequestCollection interface {
 	CreateSampleRequest(ctx context.Context, sampleRequest *entity.SampleRequest) error
-	GetSampleRequestByApiId(ctx context.Context, apiId primitive.ObjectID, limit, offset int64) ([]*entity.SampleRequest, error)
+	GetSampleRequestByApiId(ctx context.Context, req *entity.GetSampleRequestByApiIdRequest) ([]*entity.SampleRequest, error)
 }
 
 type SampleRequestCollection struct {
@@ -33,11 +33,19 @@ func (s *SampleRequestCollection) CreateSampleRequest(ctx context.Context, sampl
 	return s.Insert(ctx, sampleRequest)
 }
 
-func (s *SampleRequestCollection) GetSampleRequestByApiId(ctx context.Context,
-	apiId primitive.ObjectID, limit, offset int64) ([]*entity.SampleRequest, error) {
-	filter := map[string]interface{}{
-		"api_id": apiId,
+func (s *SampleRequestCollection) GetSampleRequestByApiId(
+	ctx context.Context,
+	req *entity.GetSampleRequestByApiIdRequest,
+) ([]*entity.SampleRequest, error) {
+	filter := container.Map{
+		"api_id": req.ApiId,
+	}
+	if req.From != nil {
+		filter["created_at"] = bson.M{"$gte": req.From}
+	}
+	if req.To != nil {
+		filter["created_at"] = bson.M{"$lte": req.To}
 	}
 	sort := bson.D{{Key: "created_at", Value: -1}}
-	return s.GetByBatch(ctx, filter, sort, limit, offset)
+	return s.GetByBatch(ctx, filter, sort, req.Limit, req.Offset)
 }

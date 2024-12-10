@@ -228,7 +228,7 @@ func (col *BaseCollection[P, T]) UpdateMany(ctx context.Context, filter any, ite
 
 func (col *BaseCollection[P, T]) UpdatePartial(ctx context.Context,
 	filter any, params container.Map,
-) (int64, error) {
+) (*mongo.UpdateResult, error) {
 	params = params.Except([]string{"_id", "id", "created_at"})
 	params = params.Merge(container.Map{
 		"updated_at": time.Now(),
@@ -238,9 +238,9 @@ func (col *BaseCollection[P, T]) UpdatePartial(ctx context.Context,
 	})
 	if err != nil {
 		logctx.Errorf(ctx, "mongo update, collection: %s, err: %v", col.collection.Name(), err)
-		return 0, fmt.Errorf("mongo update, %w", err)
+		return nil, fmt.Errorf("mongo update, %w", err)
 	}
-	return result.ModifiedCount, nil
+	return result, nil
 }
 
 // NOTED: nested struct won't be converted to Object

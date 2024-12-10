@@ -21,6 +21,9 @@ type MongoStorage interface {
 	IApiCollection
 	ISampleRequestCollection
 	ISampleResponseCollection
+	IRequestStructureCollection
+	IResponseStructureCollection
+	ITypeCollection
 }
 
 type mongoStorage struct {
@@ -32,6 +35,9 @@ type mongoStorage struct {
 	ApiCollection
 	SampleRequestCollection
 	SampleResponseCollection
+	RequestStructureCollection
+	ResponseStructureCollection
+	TypeCollection
 }
 
 var _ MongoStorage = &mongoStorage{}
@@ -68,9 +74,12 @@ func newMongoStorage(log *logger.Logger, conf *config.Config) *mongoStorage { //
 		conf:      conf,
 		mgoClient: mongoClient,
 
-		ApiCollection:            *NewApiCollection(mongoDB),
-		SampleRequestCollection:  *NewSampleRequestCollection(mongoDB),
-		SampleResponseCollection: *NewSampleResponseCollection(mongoDB),
+		ApiCollection:               *NewApiCollection(mongoDB),
+		SampleRequestCollection:     *NewSampleRequestCollection(mongoDB),
+		SampleResponseCollection:    *NewSampleResponseCollection(mongoDB),
+		RequestStructureCollection:  *NewRequestStructureCollection(mongoDB),
+		ResponseStructureCollection: *NewResponseStructureCollection(mongoDB),
+		TypeCollection:              *NewTypeCollection(mongoDB),
 	}
 }
 

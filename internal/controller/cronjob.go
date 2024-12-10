@@ -7,7 +7,7 @@ import (
 	"github.com/carousell/ct-go/pkg/cronjob"
 	logctx "github.com/carousell/ct-go/pkg/logger/log_context"
 	"github.com/ct-logic-api-document/internal/constants"
-	"github.com/ct-logic-api-document/internal/usecase"
+	fetchdata "github.com/ct-logic-api-document/internal/usecase/fetch_data"
 )
 
 type CronJobOptions struct {
@@ -16,7 +16,7 @@ type CronJobOptions struct {
 }
 
 func NewCronJob(
-	fetchDataUC usecase.IFetchDataUC,
+	fetchDataUC fetchdata.IFetchDataUC,
 ) (map[string]CronJobOptions, error) {
 	ctx := context.Background()
 	logctx.AppendName(ctx, "cron_job")
