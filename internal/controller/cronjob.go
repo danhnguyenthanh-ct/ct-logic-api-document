@@ -7,6 +7,7 @@ import (
 	"github.com/carousell/ct-go/pkg/cronjob"
 	logctx "github.com/carousell/ct-go/pkg/logger/log_context"
 	"github.com/ct-logic-api-document/internal/constants"
+	buildstructure "github.com/ct-logic-api-document/internal/usecase/build_structure"
 	fetchdata "github.com/ct-logic-api-document/internal/usecase/fetch_data"
 )
 
@@ -17,6 +18,7 @@ type CronJobOptions struct {
 
 func NewCronJob(
 	fetchDataUC fetchdata.IFetchDataUC,
+	buildStructureUC buildstructure.IBuildStructureUC,
 ) (map[string]CronJobOptions, error) {
 	ctx := context.Background()
 	logctx.AppendName(ctx, "cron_job")
@@ -24,6 +26,14 @@ func NewCronJob(
 		constants.CommandFetchDataFromGcs: {
 			Name:    constants.CommandFetchDataFromGcs,
 			Handler: fetchDataUC.FetchDataFromGcs,
+		},
+		constants.CommandFetchDataFromLocal: {
+			Name:    constants.CommandFetchDataFromLocal,
+			Handler: fetchDataUC.FetchDataFromLocal,
+		},
+		constants.CommandBuildStructure: {
+			Name:    constants.CommandBuildStructure,
+			Handler: buildStructureUC.BuildStructure,
 		},
 	}
 	argsWithProg := os.Args

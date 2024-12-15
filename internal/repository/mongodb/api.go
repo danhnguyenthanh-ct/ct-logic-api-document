@@ -21,6 +21,7 @@ type IApiCollection interface {
 	GetApis(ctx context.Context, limit, offset int64) ([]*entity.Api, error)
 	CountApis(ctx context.Context) (int64, error)
 	UpdateLatestBuildStructure(ctx context.Context, id primitive.ObjectID, latestBuildStructure *time.Time) error
+	GetApiByIdInStr(ctx context.Context, id string) (*entity.Api, error)
 }
 
 type ApiCollection struct {
@@ -82,4 +83,15 @@ func (a *ApiCollection) UpdateLatestBuildStructure(ctx context.Context, id primi
 		return errors.New("no documents updated")
 	}
 	return nil
+}
+
+func (a *ApiCollection) GetApiByIdInStr(ctx context.Context, id string) (*entity.Api, error) {
+	objId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	filter := container.Map{
+		"_id": objId,
+	}
+	return a.Get(ctx, filter)
 }

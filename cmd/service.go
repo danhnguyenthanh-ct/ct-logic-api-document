@@ -9,7 +9,10 @@ import (
 	"github.com/ct-logic-api-document/config"
 	"github.com/ct-logic-api-document/internal/controller"
 	"github.com/ct-logic-api-document/internal/handler"
+	"github.com/ct-logic-api-document/internal/repository/mongodb"
+	buildstructure "github.com/ct-logic-api-document/internal/usecase/build_structure"
 	fetchdata "github.com/ct-logic-api-document/internal/usecase/fetch_data"
+	loadstructure "github.com/ct-logic-api-document/internal/usecase/load_structure"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -76,8 +79,11 @@ func Invoke(invokers ...interface{}) *fx.App {
 		fx.StartTimeout(conf.App.StartTimeout),
 		fx.StopTimeout(conf.App.StopTimeout),
 		fx.Provide(
-			handler.NewHandler,
+			mongodb.NewMongoStorage,
+			loadstructure.NewLoadStructureUC,
 			fetchdata.NewFetchDataUC,
+			buildstructure.NewBuildStructureUC,
+			handler.NewHandler,
 			controller.NewCronJob,
 		),
 		fx.Supply(conf),

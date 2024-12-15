@@ -1,8 +1,9 @@
 package metric
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -10,9 +11,7 @@ const (
 	LabelMethod = "method"
 )
 
-var (
-	cusMetrics *customMetrics
-)
+var cusMetrics *customMetrics
 
 type Metrics interface {
 	RecordCustomMetrics(method string, value float64, begin time.Time, err error)
@@ -25,7 +24,7 @@ type customMetrics struct {
 }
 
 func (m *customMetrics) RecordCustomMetrics(method string, value float64, begin time.Time, err error) {
-	var labels = make(map[string]string)
+	labels := make(map[string]string)
 	labels[LabelStatus] = "succeed"
 	labels[LabelMethod] = method
 	if err != nil {

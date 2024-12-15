@@ -13,12 +13,10 @@ const (
 	ParameterTypeAny     = "any"
 )
 
-var (
-	ParametersTypeInteger = container.List[string]{
-		"limit",
-		"offset",
-		"skip",
-		"page",
-		"size",
-	}
-)
+var ParametersTypeInteger = container.List[string]{
+	"limit",
+	"offset",
+	"skip",
+	"page",
+	"size",
+}

@@ -70,6 +70,31 @@ func TestGenerateSchema(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Test GenerateSchema - 03",
+			args: args{
+				ctx:  context.Background(),
+				body: `{"priceUnit": null}`,
+			},
+			want: map[string]any{
+				"type":       "object",
+				"properties": map[string]any{},
+			},
+		},
+		{
+			name: "Test GenerateSchema - 03",
+			args: args{
+				ctx:  context.Background(),
+				body: `{"name":"Nguyen Van A", "age":16, "priceUnit": null}`,
+			},
+			want: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"name": map[string]any{"type": "string"},
+					"age":  map[string]any{"type": "number"},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -137,12 +162,7 @@ func TestGenerateSchemaForArray(t *testing.T) {
 				ctx:  context.Background(),
 				body: `[]`,
 			},
-			want: map[string]any{
-				"type": "array",
-				"items": map[string]any{
-					"type": "null",
-				},
-			},
+			want: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -158,6 +178,192 @@ func TestGenerateSchemaForArray(t *testing.T) {
 	}
 }
 
-func TestMergeMaps(t *testing.T) {
+func TestMergeObject(t *testing.T) {
 	t.Parallel()
+	type args struct {
+		ctx    context.Context
+		map1   map[string]any
+		map2   map[string]any
+		result map[string]any
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Test MergeObject - 01",
+			args: args{
+				ctx: context.Background(),
+				map1: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+					},
+				},
+				map2: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"age": map[string]any{"type": "number"},
+					},
+				},
+				result: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"age":  map[string]any{"type": "number"},
+					},
+				},
+			},
+		},
+		{
+			name: "Test MergeObject - 02",
+			args: args{
+				ctx: context.Background(),
+				map1: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"company": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"name":    map[string]any{"type": "string"},
+								"address": map[string]any{"type": "string"},
+							},
+						},
+						"age": map[string]any{"type": "number"},
+						"address": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"street": map[string]any{"type": "string"},
+								"zip":    map[string]any{"type": "number"},
+							},
+						},
+					},
+				},
+				map2: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"company": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"name":    map[string]any{"type": "string"},
+								"address": map[string]any{"type": "string"},
+								"phone":   map[string]any{"type": "string"},
+							},
+						},
+					},
+				},
+				result: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"company": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"name":    map[string]any{"type": "string"},
+								"address": map[string]any{"type": "string"},
+								"phone":   map[string]any{"type": "string"},
+							},
+						},
+						"age": map[string]any{"type": "number"},
+						"address": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"street": map[string]any{"type": "string"},
+								"zip":    map[string]any{"type": "number"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Test MergeObject - 03",
+			args: args{
+				ctx: context.Background(),
+				map1: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+					},
+				},
+				map2: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"age":  map[string]any{"type": "number"},
+					},
+				},
+				result: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"age":  map[string]any{"type": "number"},
+					},
+				},
+			},
+		},
+		{
+			name: "Test MergeObject - 04",
+			args: args{
+				ctx: context.Background(),
+				map1: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{},
+					},
+				},
+				map2: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"age":  map[string]any{"type": "number"},
+					},
+				},
+				result: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"age":  map[string]any{"type": "number"},
+					},
+				},
+			},
+		},
+		{
+			name: "Test MergeObject - 05",
+			args: args{
+				ctx: context.Background(),
+				map1: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+					},
+				},
+				map2: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{},
+						"age":  map[string]any{"type": "number"},
+					},
+				},
+				result: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"age":  map[string]any{"type": "number"},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			result := mergeObject(tt.args.map1, tt.args.map2)
+			require.Equal(t, tt.args.result, result)
+		})
+	}
 }

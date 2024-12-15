@@ -6,15 +6,21 @@ import (
 	"regexp"
 
 	"github.com/ct-logic-api-document/config"
+	loadstructure "github.com/ct-logic-api-document/internal/usecase/load_structure"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
+	loadStructureHandler *LoadStructureHandler
 }
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(
+	loadstructureUC loadstructure.ILoadstructure,
+) *Handler {
+	return &Handler{
+		loadStructureHandler: NewLoadStructureHandler(loadstructureUC),
+	}
 }
 
 func RegisterCustomHTTPHandler(
@@ -25,7 +31,9 @@ func RegisterCustomHTTPHandler(
 ) {
 	e := echo.New()
 
-	// internalGroup := e.Group("/internal")
+	internalGroup := e.Group("/internal")
+
+	handler.loadStructureHandler.RegisterHandler(internalGroup)
 
 	echo.WrapHandler(mux)
 
