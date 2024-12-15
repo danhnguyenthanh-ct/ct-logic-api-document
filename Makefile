@@ -31,4 +31,8 @@ dev-down:
 		-p $(GITHUB_SHA) down \
 		-v --rmi local
 
-.PHONY: test dev-up dev-down fmt lint
+dev:
+	go mod tidy
+	go run main.go service
+
+.PHONY: test dev-up dev-down fmt lint dev

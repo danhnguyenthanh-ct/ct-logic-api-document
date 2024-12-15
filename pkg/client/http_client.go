@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"go.elastic.co/apm/module/apmhttp"
-	"golang.org/x/net/context/ctxhttp"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
+
+	"go.elastic.co/apm/module/apmhttp"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 type HTTPClient struct {

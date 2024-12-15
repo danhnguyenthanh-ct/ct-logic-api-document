@@ -207,7 +207,7 @@ func (f *buildStructureIC) buildRequestStructureBySampleRequest(ctx context.Cont
 					}
 				}
 				sampleBodySchema := generateSchema(body)
-				currentBodySchema = mergeMaps(currentBodySchema, sampleBodySchema)
+				currentBodySchema = mergeObject(currentBodySchema, sampleBodySchema)
 			}
 		}
 		offset += 20
@@ -269,7 +269,7 @@ func (f *buildStructureIC) buildResponseStructureBySampleResponse(ctx context.Co
 					}
 				}
 				sampleBodySchema := generateSchema(body)
-				currentBodySchema = mergeMaps(currentBodySchema, sampleBodySchema)
+				currentBodySchema = mergeObject(currentBodySchema, sampleBodySchema)
 			}
 		}
 		offset += 20

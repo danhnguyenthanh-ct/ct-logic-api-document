@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	"time"
+
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/labstack/gommon/log"
@@ -9,7 +11,6 @@ import (
 	"go.elastic.co/apm/module/apmgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"time"
 )
 
 type GRPCClient struct {

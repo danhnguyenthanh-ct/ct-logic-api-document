@@ -2,10 +2,12 @@ package fetchdata
 
 import (
 	"bufio"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"errors"
 	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,6 +17,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/carousell/ct-go/pkg/container"
+	httpkit "github.com/carousell/ct-go/pkg/httpclient"
 	logctx "github.com/carousell/ct-go/pkg/logger/log_context"
 	"github.com/carousell/ct-go/pkg/workerpool"
 	"github.com/ct-logic-api-document/config"
@@ -22,6 +25,7 @@ import (
 	"github.com/ct-logic-api-document/internal/entity"
 	"github.com/ct-logic-api-document/internal/repository/mongodb"
 	gcsutils "github.com/ct-logic-api-document/utils/gcs"
+	utilslocal "github.com/ct-logic-api-document/utils/local"
 	"github.com/goccy/go-json"
 	"github.com/spf13/cast"
 	"golang.org/x/text/encoding/unicode"
@@ -30,8 +34,10 @@ import (
 
 const maxLogLinesProccessing = 100
 
-var jsonRegexp = regexp.MustCompile(`^\{.*\}`)
-var k8sPrefixRegexp = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z) (stderr|stdout) F\s+`)
+var (
+	jsonRegexp      = regexp.MustCompile(`^\{.*\}`)
+	k8sPrefixRegexp = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z) (stderr|stdout) F\s+`)
+)
 
 var bufferPool = sync.Pool{
 	New: func() interface{} {
@@ -43,6 +49,7 @@ type IFetchDataUC interface {
 	FetchDataFromGcs(ctx context.Context) error
 
 	// testing
+	FetchDataFromLocal(ctx context.Context) error
 	ProcessLogLine(ctx context.Context, logLine []byte) error
 }
 
@@ -224,6 +231,15 @@ func (f *fetchDataUC) preProcessLine(_ context.Context, line []byte) ([]byte, er
 		return nil, errors.New("invalid utf8")
 	}
 	logLine := string(utf8Log)
+	if strings.Contains(logLine, "Content-Type: image") { // temporary fix for image content type
+		return nil, errors.New("image content type")
+	}
+	if strings.Contains(logLine, ".lua") { // temporary fix for application/octet-stream content type
+		return nil, errors.New("ignore kong debug")
+	}
+	if strings.Contains(logLine, "config?check_hash") { // temporary fix for kong
+		return nil, errors.New("ignore kong config")
+	}
 	ll, err := strconv.Unquote(`"` + logLine + `"`)
 	if err != nil {
 		return nil, err
@@ -237,9 +253,11 @@ func (f *fetchDataUC) ProcessLogLine(ctx context.Context, logLine []byte) error 
 	logctx.Infow(ctx, "processing job", "logLine", string(logLine))
 	logObject, err := f.parseLogIntoStruct(ctx, string(logLine))
 	if err != nil {
+		logctx.Errorw(ctx, "failed to parse log into struct", "logLine", string(logLine), "err", err)
 		return err
 	}
 	if err := f.storeLog(ctx, logObject); err != nil {
+		logctx.Errorw(ctx, "failed to store log", "logLine", string(logLine), "err", err)
 		return err
 	}
 	return nil
@@ -297,6 +315,7 @@ func (f *fetchDataUC) extractJSON(logMsg []byte) (log []byte, k8sReceiveTime *ti
 	// Return the JSON part
 	return []byte(matches[0]), k8sReceiveTime, true
 }
+
 func (f *fetchDataUC) validateLogObject(logObject container.Map) error {
 	if _, ok := logObject["request"]; !ok {
 		return errors.New("missing request info")
@@ -347,7 +366,9 @@ func (f *fetchDataUC) storeLog(ctx context.Context, logObject container.Map) err
 func (f *fetchDataUC) storeSampleRequest(ctx context.Context, api *entity.Api, request container.Map) error {
 	sampleRequest := &entity.SampleRequest{
 		ApiId: api.Id,
-		Body:  request["body"].(string),
+	}
+	if request["body"] != nil {
+		sampleRequest.Body = request["body"].(string)
 	}
 	if request["querystring"] != nil {
 		sampleRequest.Parameters = buildParametersFromQueryString(request["querystring"].(map[string]any))
@@ -359,6 +380,10 @@ func (f *fetchDataUC) storeSampleRequest(ctx context.Context, api *entity.Api, r
 }
 
 func (f *fetchDataUC) storeSampleResponse(ctx context.Context, api *entity.Api, response container.Map) error {
+	if response["body"] == nil {
+		logctx.Infow(ctx, "response body is nil", "response", response)
+		return nil
+	}
 	sampleResponse := &entity.SampleResponse{
 		ApiId:          api.Id,
 		HttpStatusCode: cast.ToInt(response["status"]),
@@ -368,4 +393,75 @@ func (f *fetchDataUC) storeSampleResponse(ctx context.Context, api *entity.Api, 
 		return err
 	}
 	return nil
+}
+
+func (f *fetchDataUC) FetchDataFromLocal(ctx context.Context) error {
+	// load the file from sample data
+	folderPath := "sample_data"
+	filesName, err := utilslocal.GetFileNames(folderPath)
+	if err != nil {
+		logctx.Error(ctx, "failed to get file names")
+		return err
+	}
+	for _, fileName := range filesName {
+		filePath := folderPath + "/" + fileName
+		lines, err := f.readFileLocal(ctx, filePath)
+		if err != nil {
+			logctx.Errorw(ctx, "failed to read file", "err", err)
+			continue
+		}
+		pool := workerpool.NewE(100)
+		defer pool.Close()
+		for _, line := range lines {
+			line := line
+			ctx := context.Background()
+			ctx = httpkit.InjectCorrelationIDToContext(ctx, httpkit.GenerateCorrelationID())
+			pool.Run(func() error {
+				return f.ProcessLogLine(ctx, line)
+			})
+		}
+		if err := pool.Wait(); err != nil {
+			logctx.Errorw(ctx, "err when process log line", "err", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *fetchDataUC) readFileLocal(ctx context.Context, filePath string) ([][]byte, error) {
+	// read the file
+	// send the data to the jobs channel
+	logctx.Infow(ctx, "reading file", "file", filePath)
+	file, err := os.Open(filePath)
+	if err != nil {
+		logctx.Errorw(ctx, "failed to open file", "err", err)
+		return nil, err
+	}
+	defer file.Close()
+	// Read all content
+	data, err := io.ReadAll(file)
+	if err != nil {
+		logctx.Errorw(ctx, "failed to read file", "err", err)
+		return nil, err
+	}
+	if utilslocal.IsGzipped(data) {
+		decompressed, err := gzip.NewReader(bytes.NewReader(data))
+		if err != nil {
+			logctx.Errorw(ctx, "failed to init gzip reader", "err", err)
+			return nil, err
+		}
+		scanner := bufio.NewScanner(decompressed)
+		resp := make([][]byte, 0)
+		for scanner.Scan() {
+			lineBytes := scanner.Bytes()
+			line, err := f.preProcessLine(ctx, lineBytes)
+			if err != nil {
+				logctx.Errorw(ctx, "failed to pre process line", "err", err)
+				continue
+			}
+			resp = append(resp, line)
+		}
+		return resp, nil
+	}
+	return nil, errors.New("file is not gzipped")
 }

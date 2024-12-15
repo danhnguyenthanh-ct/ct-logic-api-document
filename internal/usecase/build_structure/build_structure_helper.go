@@ -1,55 +1,64 @@
 package buildstructure
 
-func mergeMaps(map1, map2 map[string]any) map[string]any {
-	result := make(map[string]any)
-	for k, v := range map1 {
-		if v2, ok := map2[k]; ok {
-			switch vTyped := v.(type) {
-			case map[string]any:
-				if v2Typed, ok := v2.(map[string]any); ok {
-					result[k] = mergeMaps(vTyped, v2Typed)
-				} else {
-					result[k] = v
-				}
-			default:
-				result[k] = v
-			}
-		} else {
-			result[k] = v
-		}
-	}
+func mergeObject(map1, map2 map[string]any) map[string]any {
+	merged := make(map[string]interface{})
+	merged["type"] = "object"
 
-	for k, v := range map2 {
-		if _, ok := map1[k]; !ok {
-			result[k] = v
+	props1, _ := map1["properties"].(map[string]interface{})
+	props2, _ := map2["properties"].(map[string]interface{})
+
+	mergedProps := make(map[string]interface{})
+	for k, v := range props1 {
+		vTyped := inferType(v)
+		if vTyped == "object" {
+			if v2, ok := props2[k]; ok {
+				if v2Object, ok := v2.(map[string]interface{}); ok {
+					vObject := v.(map[string]interface{})
+					if len(vObject) > 0 && len(v2Object) > 0 {
+						mergedProps[k] = mergeObject(vObject, v2Object)
+						continue
+					}
+				}
+			}
+		} else if vTyped == "null" {
+			continue
 		}
+		mergedProps[k] = v
 	}
-	return result
+	for k, v := range props2 {
+		if vTyped := inferType(v); vTyped == "object" {
+			vObject := v.(map[string]interface{})
+			if len(vObject) > 0 {
+				mergedProps[k] = v
+			}
+			continue
+		}
+		mergedProps[k] = v
+	}
+	merged["properties"] = mergedProps
+	return merged
 }
 
 func generateSchemaForArray(data []any) map[string]any {
 	if len(data) == 0 {
-		return map[string]any{
-			"type": "array",
-			"items": map[string]any{
-				"type": "null",
-			},
-		}
+		return nil
 	}
 	typeOfElement := inferType(data[0])
-	if typeOfElement != "object" {
-		return map[string]any{
-			"type":  "array",
-			"items": map[string]any{"type": typeOfElement},
-		}
-	} else {
+	if typeOfElement == "null" {
+		return nil
+	} else if typeOfElement == "object" {
 		currentSchema := generateSchema(data[0].(map[string]any))
 		for i := 1; i < len(data); i++ {
-			currentSchema = mergeMaps(currentSchema, generateSchema(data[i].(map[string]any)))
+			currentSchema = mergeObject(currentSchema, generateSchema(data[i].(map[string]any)))
 		}
 		return map[string]any{
 			"type":  "array",
 			"items": currentSchema,
+		}
+	} else {
+		return map[string]any{
+			"type":  "array",
+			"items": map[string]any{"type": typeOfElement},
 		}
 	}
 }
@@ -62,27 +71,30 @@ func generateSchema(data map[string]any) map[string]any {
 	properties := schema["properties"].(map[string]any)
 	for key, value := range data {
 		typeOfField := inferType(value)
+		if typeOfField == "null" {
+			continue
+		}
 		if typeOfField == "object" {
-			properties[key] = generateSchema(value.(map[string]any))
+			if schemaForObject := generateSchema(value.(map[string]any)); schemaForObject != nil {
+				properties[key] = schemaForObject
+			}
 		} else if typeOfField == "array" {
-			// Assume array contains only objects
+			// Assume array contains only one type of element
 			if len(value.([]any)) == 0 {
-				properties[key] = map[string]any{
-					"type": "array",
-					"items": map[string]any{
-						"type": "null",
-					},
-				}
 				continue
 			}
 			typeOfElement := inferType(value.([]any)[0])
-			if typeOfElement != "object" {
+			if typeOfElement == "object" {
+				if schemaForObjectsArray := generateSchemaForArray(value.([]any)); schemaForObjectsArray != nil {
+					properties[key] = schemaForObjectsArray
+				}
+			} else if typeOfElement == "null" {
+				continue
+			} else {
 				properties[key] = map[string]any{
 					"type":  "array",
 					"items": map[string]any{"type": typeOfElement},
 				}
-			} else {
-				properties[key] = generateSchemaForArray(value.([]any))
 			}
 		} else {
 			properties[key] = map[string]any{
