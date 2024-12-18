@@ -10,6 +10,7 @@ require (
 	github.com/carousell/ct-go/pkg/container v0.6.0
 	github.com/carousell/ct-go/pkg/cronjob v0.1.0
 	github.com/carousell/ct-go/pkg/gateway v0.24.0
+	github.com/carousell/ct-go/pkg/httpclient v0.10.0
 	github.com/carousell/ct-go/pkg/logger v0.9.5
 	github.com/carousell/ct-go/pkg/workerpool v0.2.1
 	github.com/goccy/go-json v0.10.3
@@ -48,7 +49,6 @@ require (
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/carousell/ct-go/pkg/cterr v0.5.2 // indirect
-	github.com/carousell/ct-go/pkg/httpclient v0.10.0 // indirect
 	github.com/carousell/ct-go/pkg/httputils v0.3.0 // indirect
 	github.com/carousell/ct-go/pkg/json v0.1.2 // indirect
 	github.com/carousell/ct-go/pkg/pushgateway v0.1.0 // indirect

@@ -35,4 +35,20 @@ dev:
 	go mod tidy
 	go run main.go service
 
-.PHONY: test dev-up dev-down fmt lint dev
+start-swagger:
+	docker run -e QUERY_CONFIG_ENABLED='true' -p 80:8080 swaggerapi/swagger-ui
+
+stop-swagger:
+	docker stop $(docker ps -a -q --filter ancestor=swaggerapi/swagger-ui)
+
+
+fetch-data-local:
+	echo "==> Fetching data from local"
+	go run main.go cronjob fetch_data_from_local 
+
+build-structure:
+	echo "==> Building structure"
+	go run main.go cronjob build_structure 
+
+
+.PHONY: test dev-up dev-down fmt lint dev start-swagger fetch-data-local build-structure

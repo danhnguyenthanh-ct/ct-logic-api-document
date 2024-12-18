@@ -67,6 +67,14 @@ func TestFindParameterInPath(t *testing.T) {
 			},
 			wantUpdated: "/v1/private/bank_transfer/contract-history/{uuid}",
 		},
+		{
+			name: "Test FindParameterInPath - action",
+			args: args{
+				ctx:  context.Background(),
+				path: "/v1/private/bank_transfer/contract-history/1282:action",
+			},
+			wantUpdated: "/v1/private/bank_transfer/contract-history/{id}:action",
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
