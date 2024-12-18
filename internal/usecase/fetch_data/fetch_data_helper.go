@@ -27,7 +27,9 @@ func findParameterInPath(_ context.Context, path string) string {
 	pathParts := strings.Split(path, "/")
 	updatedPath := []string{}
 	for _, pathPart := range pathParts {
-		if isValidUUID(pathPart) {
+		if updatedPathPart, ok := isContainActions(pathPart); ok {
+			updatedPath = append(updatedPath, updatedPathPart)
+		} else if isValidUUID(pathPart) {
 			updatedPath = append(updatedPath, "{uuid}")
 		} else if isNumber(pathPart) {
 			updatedPath = append(updatedPath, "{id}")
@@ -36,6 +38,24 @@ func findParameterInPath(_ context.Context, path string) string {
 		}
 	}
 	return strings.Join(updatedPath, "/")
+}
+
+func isContainActions(pathPart string) (string, bool) {
+	if strings.Contains(pathPart, ":") {
+		subPathParts := strings.Split(pathPart, ":")
+		updatedPathParts := []string{}
+		for _, subPathPart := range subPathParts {
+			if isValidUUID(subPathPart) {
+				updatedPathParts = append(updatedPathParts, "{uuid}")
+			} else if isNumber(subPathPart) {
+				updatedPathParts = append(updatedPathParts, "{id}")
+			} else {
+				updatedPathParts = append(updatedPathParts, subPathPart)
+			}
+		}
+		return strings.Join(updatedPathParts, ":"), true
+	}
+	return pathPart, false
 }
 
 func isValidUUID(s string) bool {
